@@ -1,8 +1,0 @@
-{
-  "name": "KOTOBA-ATE",
-  "compatibility_date": "2026-09-11",
-  "assets": {
-    "directory": "./",
-    "not_found_handling": "404-page"
-  }
-}
