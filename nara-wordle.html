@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>奈良 言葉当てゲーム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap');
+
+  :root {
+    --ink: #1a1208;
+    --paper: #f5f0e8;
+    --aged: #e8dfc8;
+    --gold: #c9a84c;
+    --deep-red: #8b2020;
+    --correct: #5a7a3a;
+    --present: #c9a84c;
+    --absent: #8a7d6a;
+    --border: #c4b49a;
+    --shadow: rgba(26,18,8,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 100%, rgba(90,122,58,0.08) 0%, transparent 55%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    max-width: 480px;
+    padding: 8px 14px 6px;
+    border-bottom: 1.5px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header-deco {
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    line-height: 1.1;
+  }
+
+  h1 span { color: var(--deep-red); }
+
+  .subtitle {
+    font-size: 9px;
+    color: var(--absent);
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.05em;
+    margin-top: 1px;
+  }
+
+  .deer-icon { font-size: 1.8rem; opacity: 0.75; }
+
+  /* ── MAIN WRAPPER ── */
+  .main {
+    width: 100%;
+    max-width: 480px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 10px 6px;
+    gap: 4px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ── HINT + MESSAGE ── */
+  .top-bar {
+    width: 100%;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .hint-box {
+    width: 100%;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .hint-label {
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    font-weight: 700;
+    display: block;
+  }
+
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--deep-red);
+    font-family: 'Noto Sans JP', sans-serif;
+    background: rgba(245,240,232,0.92);
+    padding: 2px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* ── BOARD ── */
+  #board {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tile {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 900;
+    border: 2px solid var(--border);
+    background: #fff;
+    box-shadow: 2px 2px 0 var(--shadow);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* dynamic tile sizing via JS */
+  .tile.filled  { border-color: var(--absent); animation: pop 0.08s ease; }
+  .tile.correct { background: var(--correct); border-color: var(--correct); color: #fff; animation: flip 0.5s ease forwards; }
+  .tile.present { background: var(--present); border-color: var(--present); color: #fff; animation: flip 0.5s ease forwards; }
+  .tile.absent  { background: var(--absent);  border-color: var(--absent);  color: #fff; animation: flip 0.5s ease forwards; }
+  .tile.shake   { animation: shake 0.4s ease; }
+  .tile.bounce  { animation: bounce 0.6s ease forwards; }
+
+  @keyframes pop    { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  @keyframes flip   { 0%{transform:rotateX(0)} 50%{transform:rotateX(-90deg);background:var(--aged)} 100%{transform:rotateX(0)} }
+  @keyframes shake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-12px)} 60%{transform:translateY(-6px)} }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 10px;
+    font-size: 9px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--absent);
+    flex-shrink: 0;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── KEYBOARD ── */
+  #keyboard {
+    width: 100%;
+    padding: 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom, 4px);
+  }
+
+  .kb-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+  }
+  .kb-row.last-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr 2fr;
+  }
+
+  .key {
+    height: 36px;
+    padding: 0;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    border-radius: 3px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.08s;
+    box-shadow: 0 2px 0 var(--shadow);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .key:active { background: var(--aged); transform: translateY(1px); box-shadow: none; }
+
+  /* 修飾キー：゛゜小 */
+  .key.modifier {
+    background: var(--aged);
+    border-color: var(--gold);
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+  .key.modifier.active-mod {
+    background: var(--gold);
+    color: #fff;
+    border-color: var(--gold);
+  }
+
+  /* 機能キー */
+  .key.fn-del  { font-size: 0.6rem; background: #f0e8d8; letter-spacing: -0.02em; }
+  .key.fn-enter{ font-size: 0.6rem; background: var(--deep-red); color: #fff; border-color: var(--deep-red); }
+
+  .key.correct { background: var(--correct); border-color: var(--correct); color: #fff; }
+  .key.present { background: var(--present); border-color: var(--present); color: #fff; }
+  .key.absent  { background: var(--absent);  border-color: var(--absent);  color: #fff; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,18,8,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    padding: 20px;
+  }
+
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--paper);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 22px 26px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 6px 6px 0 rgba(26,18,8,0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+
+  .modal-overlay.show .modal { transform: scale(1); }
+
+  .modal-emoji { font-size: 2.4rem; display: block; margin-bottom: 6px; }
+  .modal h2    { font-size: 1.3rem; margin-bottom: 6px; }
+  .modal p     { font-size: 12px; color: var(--absent); margin-bottom: 4px; font-family: 'Noto Sans JP', sans-serif; line-height: 1.6; }
+  .modal .answer { font-size: 1.4rem; font-weight: 900; color: var(--deep-red); margin: 6px 0; letter-spacing: 0.25em; }
+  .modal .desc   { font-size: 13px; color: var(--ink); background: rgba(201,168,76,0.15); border-radius: 4px; padding: 7px 10px; margin: 8px 0; font-family: 'Noto Sans JP', sans-serif; text-align: left; line-height: 1.7; }
+
+  .modal button {
+    margin-top: 10px;
+    padding: 9px 24px;
+    background: var(--deep-red);
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-deco">◈ NARA KOTOBA-ATE ◈</div>
+    <h1>奈良<span>言葉当て</span></h1>
+    <div class="subtitle">6回以内に奈良の言葉を当てよう</div>
+  </div>
+  <div class="deer-icon">🦌</div>
+</header>
+
+<div class="main">
+  <div class="top-bar">
+    <div class="hint-box" id="hintBox">
+      <span class="hint-label">ヒント HINT</span>
+      <span id="hintText">読み込み中...</span>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--correct)"></div>正しい位置</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--present)"></div>位置が違う</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--absent)"></div>含まれない</div>
+  </div>
+
+  <div id="keyboard"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <span class="modal-emoji" id="modalEmoji">🦌</span>
+    <h2 id="modalTitle"></h2>
+    <p id="modalMsg"></p>
+    <div class="answer" id="modalAnswer"></div>
+    <div class="desc" id="modalDesc"></div>
+    <button onclick="newGame()">次の問題へ →</button>
+  </div>
+</div>
+
+<script>
+// ==================== WORD LIST ====================
+const WORDS = [
+  // 01〜10：主要寺社
+  { "word": "ろくえん", "hint": "奈良公園にいる鹿を保護し、餌をあげる場所", "desc": "鹿苑（ろくえん）。春日大社境内にあり、子鹿の公開や「鹿の角きり」の舞台としても有名です。" },
+  { "word": "とうだいじ", "hint": "世界最大級の木造建築「大仏殿」がある寺", "desc": "東大寺。聖武天皇が建立した華厳宗の総本山。高さ約15mの「奈良の大仏」が鎮座する世界遺産です。" },
+  { "word": "かすがたいしゃ", "hint": "朱塗りの社殿と3000基の燈籠で知られる世界遺産", "desc": "春日大社。平城京の守護のため武甕槌命を祀ったのが始まり。藤原氏の氏神としても崇敬されました。" },
+  { "word": "ほうりゅうじ", "hint": "聖徳太子が建立した、世界最古の木造建築群", "desc": "法隆寺。607年創建。五重塔や金堂など、飛鳥時代の姿を今に伝える日本初の世界文化遺産です。" },
+  { "word": "よしのやま", "hint": "「一目千本」と称される、日本一の桜の名所", "desc": "吉野山。シロヤマザクラを中心に約3万本の桜が咲き誇る修験道の聖地。世界遺産にも登録されています。" },
+  { "word": "おおみわじんじゃ", "hint": "三輪山を御神体とする、日本最古級の神社", "desc": "大神神社（おおみわじんじゃ）。本殿を持たず、背後の三輪山を直接拝む原始神道の形態を残しています。" },
+  { "word": "ならのだいぶつ", "hint": "東大寺に鎮座する、高さ約15mの盧舎那仏", "desc": "「奈良の大仏」。聖武天皇の発願により、当時の国家予算を投じて造られた巨大な銅造の仏像です。" },
+  { "word": "やくしじ", "hint": "「凍れる音楽」と称される東塔が有名な古刹", "desc": "薬師寺。天武天皇が皇后の病気平癒を祈って建立。鮮やかな朱色の西塔と、歴史を刻む東塔の対比が美しいです。" },
+  { "word": "とうしょうだいじ", "hint": "鑑真和上が苦難の末に建立した律宗の総本山", "desc": "唐招提寺。唐から招かれた鑑真が私邸を寺としたのが始まり。金堂や講堂など、天平様式の傑作が残ります。" },
+  { "word": "こうふくじ", "hint": "阿修羅像や五重塔で有名な、藤原氏の氏寺", "desc": "興福寺。ならまちの北側に位置し、五重塔は奈良のシンボル。国宝館には人気の阿修羅像が安置されています。" },
+  // 11〜20：自然・公園
+  { "word": "しかせんべい", "hint": "奈良公園の鹿に与える、米ぬかで作られたお菓子", "desc": "鹿せんべい。鹿の健康を考え、砂糖や塩を使わず作られています。販売収益の一部は鹿の保護活動に充てられます。" },
+  { "word": "わかくさやま", "hint": "毎年1月に「山焼き」が行われる、芝生に覆われた山", "desc": "若草山。標高342m。三つの笠を重ねたような姿から笠置山とも呼ばれ、頂上からは奈良市街を一望できます。" },
+  { "word": "うきみどう", "hint": "奈良公園の鷺池（さぎいけ）に浮かぶ六角形の建物", "desc": "浮見堂。水面に映る姿が美しく、散策の休憩所や撮影スポットとして人気です。夜はライトアップもされます。" },
+  { "word": "おおみねさん", "hint": "今も女人禁制が守られている、修験道の霊山", "desc": "大峯山（山上ヶ岳）。役小角が開いたとされる修験道の聖地で、世界遺産の一部。厳しい修行の場として知られます。" },
+  { "word": "そにこうげん", "hint": "秋になると一面が黄金色のススキに覆われる高原", "desc": "曽爾高原。奈良県東部の曽爾村にあり、夕日に照らされたススキが波打つ景色は「日本の30選」にも数えられます。" },
+  { "word": "いこまやま", "hint": "大阪との県境にあり、日本最古のケーブルカーが通る山", "desc": "生駒山。山頂には生駒山上遊園地があり、中腹には「聖天さん」として親しまれる宝山寺が鎮座しています。" },
+  { "word": "いなぶちのたなだ", "hint": "明日香村にある、案山子（かかし）コンテストで有名な棚田", "desc": "稲渕（いなぶち）の棚田。「日本の棚田百選」に選ばれており、秋には彼岸花と黄金色の稲穂が美しい風景を作ります。" },
+  { "word": "むろうこ", "hint": "宇陀市にある、深緑に囲まれたダム湖", "desc": "室生湖。室生ダムによって作られた人工湖で、周辺には龍穴神社などのパワースポットも点在します。" },
+  { "word": "やまのべのみち", "hint": "三輪から奈良へ続く、日本最古といわれる古道", "desc": "山の辺の道。古墳の傍らや果樹園の中を通り、万葉集ゆかりの地を巡ることができる人気のハイキングコースです。" },
+  { "word": "むろうじ", "hint": "「女人高野」と呼ばれ、屋外で最小の五重塔がある寺", "desc": "室生寺。平安時代、高野山が女人禁制だったのに対し、女性の参拝を受け入れたためこの名で親しまれています。" },
+  // 21〜30：歴史・人物
+  { "word": "へいじょうきょう", "hint": "710年に遷都された、唐の長安を模した都", "desc": "平城京。「咲く花の匂うがごとく」と詠われた華やかな都。現在は平城宮跡として大極殿や朱雀門が復元されています。" },
+  { "word": "てんぴょうぶんか", "hint": "聖武天皇の時代に栄えた、仏教の影響が強い国際的な文化", "desc": "天平文化。遣唐使が持ち帰った大陸の文化が融合し、正倉院の宝物などにその煌びやかな形が残されています。" },
+  { "word": "しょうそういん", "hint": "東大寺にある、聖武天皇の遺品を収めた校倉造の宝庫", "desc": "正倉院。1000年以上にわたり宝物を守り抜いた「世界の宝庫」。現在は宮内庁が管理し、秋に一部が公開されます。" },
+  { "word": "まんようしゅう", "hint": "奈良時代末期に成立した、日本最古の和歌集", "desc": "万葉集。大伴家持らによって編纂され、天皇から防人、農民まで幅広い階層の歌約4500首が収録されています。" },
+  { "word": "しょうとくたいし", "hint": "法隆寺を創建し、十七条憲法を定めた政治家", "desc": "聖徳太子（厩戸皇子）。推古天皇の摂政として、冠位十二階の制定や遣隋使の派遣など、中央集権国家の礎を築きました。" },
+  { "word": "がんじんわじょう", "hint": "5度の失敗と失明を乗り越え、来日した唐の高僧", "desc": "鑑真和上。日本に正しい戒律を伝えるために渡航を繰り返し、唐招提寺を開山。その肖像彫刻は日本最古の肖像彫刻です。" },
+  { "word": "そがのうまこ", "hint": "飛鳥時代に権勢を振るった、石舞台古墳の被葬者とされる人物", "desc": "蘇我馬子。仏教をいち早く取り入れ、飛鳥寺を建立。蘇我氏の全盛期を築き、政治の実権を握りました。" },
+  { "word": "きとらこふん", "hint": "壁画に描かれた「四神」や「天文図」で有名な明日香村の古墳", "desc": "キトラ古墳。7世紀末から8世紀初めの円墳。石室内部には、青龍・白虎・朱雀・玄武の四神が色鮮やかに残っていました。" },
+  { "word": "たかまつづかこふん", "hint": "「飛鳥美人」と呼ばれる女子群像の壁画で知られる古墳", "desc": "高松塚古墳。1972年の発見当時、戦後最大の考古学的発見と言われ、美しい極彩色壁画が大きな話題となりました。" },
+  { "word": "あすかむら", "hint": "石舞台古墳や飛鳥寺がある、万葉の風情を残す村", "desc": "明日香村。日本という国名が生まれた場所とも言われ、全域が古都保存法に基づき歴史的景観が守られています。" },
+  // 31〜40：食・特産品
+  { "word": "かきのはずし", "hint": "サバやサケを柿の葉で包んだ、奈良の郷土料理", "desc": "柿の葉寿司。内陸の奈良で魚を保存するために工夫された知恵の産物。柿の葉の香りと殺菌効果が特徴です。" },
+  { "word": "みわそうめん", "hint": "桜井市三輪が発祥の、極細でコシの強い麺", "desc": "三輪素麺。約1300年前から作られており、素麺のルーツとされます。冬の厳しい寒風の中で干す「門干し」は冬の風物詩です。" },
+  { "word": "ならづけ", "hint": "白ウリなどを酒粕で何度も漬け替えた伝統の漬物", "desc": "奈良漬け。かつては「粕漬け」と呼ばれ、平城京の木簡にも記されているほど歴史の長い発酵食品です。" },
+  { "word": "あすかなべ", "hint": "鶏肉や野菜を牛乳ベースの出汁で煮込む郷土料理", "desc": "飛鳥鍋。飛鳥時代に唐の僧侶が伝えた乳製品がルーツと言われ、コクがありつつもあっさりとした味わいです。" },
+  { "word": "やまとちゃ", "hint": "大和高原一帯で栽培される、香り高いお茶", "desc": "大和茶。空海が唐から種を持ち帰ったのが始まりと伝えられ、昼夜の寒暖差が激しい気候が良質な茶葉を育てます。" },
+  { "word": "よしのくず", "hint": "吉野地方の清らかな水で作られる最高級の葛粉", "desc": "吉野葛。葛の根から何度も水にさらして不純物を取り除く「吉野晒」という伝統製法で作られます。" },
+  { "word": "あかはだやき", "hint": "奈良絵と呼ばれる素朴な絵付けが特徴の陶器", "desc": "赤膚焼（あかはだやき）。大和郡山市周辺の赤土を使用。乳白色の釉薬の上に鹿や東大寺などを描く奈良絵が人気です。" },
+  { "word": "ならふで", "hint": "空海が筆作りの技法を伝えたとされる、奈良の伝統工芸", "desc": "奈良筆。用途に合わせて数種類の動物の毛を混ぜ合わせる「練り混ぜ法」という高度な技術で作られています。" },
+  { "word": "ならすみ", "hint": "日本の生産量のほぼ100%を占める、書道に欠かせない道具", "desc": "奈良墨。興福寺の僧侶が灯火の煤を集めて作ったのが始まり。現在も職人の手によって一つずつ木型に入れて作られます。" },
+  { "word": "ならさらし", "hint": "江戸時代に武士の正装として珍重された最高級の麻織物", "desc": "奈良晒。非常に白く細かな織り目が特徴で、徳川幕府の御用達として全国にその名を知らしめました。" },
+  // 41〜50：行事・その他
+  { "word": "おみずとり", "hint": "東大寺二月堂で春を呼ぶ行事として行われる「修二会」の通称", "desc": "お水取り。752年から一度も欠かさず続く行事。巨大な松明が舞台を駆ける姿は圧巻で、この行事が終わると奈良に春が来ると言われます。" },
+  { "word": "ならとうかえ", "hint": "8月に奈良公園一帯を数万本のろうそくで彩るイベント", "desc": "奈良燈花会（とうかえ）。「燈花」とは、ろうそくの芯の先にできる花の形の塊のことで、縁起が良いものとされています。" },
+  { "word": "しかのつのきり", "hint": "江戸時代から続く、鹿の角を切り落とす勇壮な行事", "desc": "鹿の角きり。秋の繁殖期に人への危害を防ぐため、勢子（せこ）たちが角を切り落とします。神事として伝統が守られています。" },
+  { "word": "だいちゃもり", "hint": "西大寺で行われる、巨大な茶碗でお茶を回し飲む行事", "desc": "大茶盛式。鎌倉時代に叡尊が民衆にお茶を振る舞ったのが始まり。顔よりも大きな茶碗を隣の人と助け合いながら飲みます。" },
+  { "word": "せんとくん", "hint": "鹿の角が生えた童子の姿をした、奈良県のキャラ", "desc": "せんとくん。2010年の平城遷都1300年祭の公式キャラとして誕生。当初は賛否両論ありましたが、現在は奈良の顔として定着しています。" },
+  { "word": "ならまち", "hint": "元興寺の旧境内を中心に広がる、古い町家が残る地区", "desc": "ならまち。江戸時代から明治時代の町並みが保存されており、カフェや雑貨店が並ぶ人気の観光エリアです。" },
+  { "word": "みがわりざる", "hint": "ならまちの軒先に吊るされている、赤い猿の人形", "desc": "身代わり申（みがわりざる）。庚申（こうしん）信仰に基づき、災いを代わりに引き受けてくれる魔除けとして親しまれています。" },
+  { "word": "いまいちょう", "hint": "江戸時代の商家の町並みがほぼ完璧に残る橿原市の地区", "desc": "今井町。重要伝統的建造物群保存地区の中でも最大級。周囲を堀で囲った「環濠集落」としても有名です。" },
+  { "word": "かしはらじんぐう", "hint": "初代天皇とされる神武天皇を祀る、広大な敷地の神社", "desc": "橿原神宮。1890年、神武天皇の宮跡とされる場所に建立。背後の畝傍山（うねびやま）を背景にした社殿が威厳を感じさせます。" },
+  { "word": "こおりやまじょう", "hint": "豊臣秀長が築城した、金魚と桜で有名な城跡", "desc": "大和郡山城。石垣の中に地蔵を逆さに積んだ「逆さ地蔵」が有名。春にはお城まつりが開催され、金魚の町としても知られます。" }
+];
+
+// ==================== KANA KEYBOARD ====================
+// 5行×10列・縦書き順（右端=あ行、左へかさたな…わ行）
+const KB_ROWS = [
+  ["わ","ら","や","ま","は","な","た","さ","か","あ"],
+  ["を","り","ゆ","み","ひ","に","ち","し","き","い"],
+  ["ん","る","よ","む","ふ","ぬ","つ","す","く","う"],
+  ["ー","れ","　","め","へ","ね","て","せ","け","え"],
+  ["　","ろ","　","も","ほ","の","と","そ","こ","お"],
+];
+
+// 濁点合成マップ
+const DAKUTEN_MAP = {
+  "か":"が","き":"ぎ","く":"ぐ","け":"げ","こ":"ご",
+  "さ":"ざ","し":"じ","す":"ず","せ":"ぜ","そ":"ぞ",
+  "た":"だ","ち":"ぢ","つ":"づ","て":"で","と":"ど",
+  "は":"ば","ひ":"び","ふ":"ぶ","へ":"べ","ほ":"ぼ",
+  "う":"ゔ",
+};
+const HANDAKUTEN_MAP = {
+  "は":"ぱ","ひ":"ぴ","ふ":"ぷ","へ":"ぺ","ほ":"ぽ",
+};
+const SMALL_MAP = {
+  "あ":"ぁ","い":"ぃ","う":"ぅ","え":"ぇ","お":"ぉ",
+  "や":"ゃ","ゆ":"ゅ","よ":"ょ",
+  "つ":"っ","わ":"ゎ",
+  // 逆変換（小→大）
+  "ぁ":"あ","ぃ":"い","ぅ":"う","ぇ":"え","ぉ":"お",
+  "ゃ":"や","ゅ":"ゆ","ょ":"よ",
+  "っ":"つ","ゎ":"わ",
+};
+
+// ==================== GAME STATE ====================
+let answer = "";
+let hint   = "";
+let desc   = "";
+let wordLen = 0;
+let currentRow = 0;
+let currentCol = 0;
+let currentGuess = [];
+let board = [];
+let keyStates = {};
+let gameOver = false;
+
+// 出題済みインデックスを管理（全問出たらリセット）
+let usedIndices = [];
+
+function pickWord() {
+  if (usedIndices.length >= WORDS.length) usedIndices = [];
+  const remaining = WORDS.map((_, i) => i).filter(i => !usedIndices.includes(i));
+  const idx = remaining[Math.floor(Math.random() * remaining.length)];
+  usedIndices.push(idx);
+  const item = WORDS[idx];
+  answer  = item.word;
+  hint    = item.hint;
+  desc    = item.desc;
+  wordLen = answer.length;
+}
+
+function initBoard() {
+  const el = document.getElementById("board");
+  el.innerHTML = "";
+  board = [];
+
+  // タイルサイズを画面幅・文字数から動的計算
+  const screenW = Math.min(window.innerWidth, 480);
+  const maxTileW = Math.floor((screenW - 20 - (wordLen - 1) * 4) / wordLen);
+  const tileSize = Math.min(maxTileW, 48);
+  const fontSize = tileSize >= 44 ? "1.25rem" : tileSize >= 36 ? "1.05rem" : "0.9rem";
+
+  for (let r = 0; r < 6; r++) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const tiles = [];
+    for (let c = 0; c < wordLen; c++) {
+      const t = document.createElement("div");
+      t.className = "tile";
+      t.style.width  = tileSize + "px";
+      t.style.height = tileSize + "px";
+      t.style.fontSize = fontSize;
+      row.appendChild(t);
+      tiles.push(t);
+    }
+    el.appendChild(row);
+    board.push(tiles);
+  }
+}
+
+function initKeyboard() {
+  const el = document.getElementById("keyboard");
+  el.innerHTML = "";
+  keyStates = {};
+
+  // 通常5行（最後の行「゛゜小」含む）
+  KB_ROWS.forEach(row => {
+    const div = document.createElement("div");
+    div.className = "kb-row";
+    row.forEach(key => {
+      const btn = document.createElement("button");
+      btn.className = "key";
+      btn.textContent = key;
+      btn.dataset.key = key;
+      if (key.trim() === "") {
+        btn.style.visibility = "hidden";
+        btn.style.pointerEvents = "none";
+      } else {
+        btn.onclick = () => handleKey(key);
+      }
+      div.appendChild(btn);
+    });
+    el.appendChild(div);
+  });
+
+  // 最終行: [⌫消す] [゛] [゜] [小] [決定↵]
+  const lastRow = document.createElement("div");
+  lastRow.className = "kb-row last-row";
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "key fn-del";
+  delBtn.textContent = "⌫ 消す";
+  delBtn.onclick = () => deleteLetter();
+  lastRow.appendChild(delBtn);
+
+  const dakBtn = document.createElement("button");
+  dakBtn.className = "key modifier";
+  dakBtn.id = "mod-dak";
+  dakBtn.textContent = "゛";
+  dakBtn.onclick = () => applyToLast(DAKUTEN_MAP);
+  lastRow.appendChild(dakBtn);
+
+  const handakBtn = document.createElement("button");
+  handakBtn.className = "key modifier";
+  handakBtn.id = "mod-handak";
+  handakBtn.textContent = "゜";
+  handakBtn.onclick = () => applyToLast(HANDAKUTEN_MAP);
+  lastRow.appendChild(handakBtn);
+
+  const smallBtn = document.createElement("button");
+  smallBtn.className = "key modifier";
+  smallBtn.id = "mod-small";
+  smallBtn.textContent = "小";
+  smallBtn.onclick = () => applyToLast(SMALL_MAP);
+  lastRow.appendChild(smallBtn);
+
+  const entBtn = document.createElement("button");
+  entBtn.className = "key fn-enter";
+  entBtn.textContent = "決定 ↵";
+  entBtn.onclick = () => submitGuess();
+  lastRow.appendChild(entBtn);
+
+  el.appendChild(lastRow);
+}
+
+// 直前の文字に変換マップを適用する
+function applyToLast(map) {
+  if (currentCol <= 0) return;
+  const prev = currentGuess[currentCol - 1];
+  const next = map[prev];
+  if (!next) {
+    shakeTile(currentRow, currentCol - 1);
+    return;
+  }
+  currentGuess[currentCol - 1] = next;
+  board[currentRow][currentCol - 1].textContent = next;
+}
+
+function newGame() {
+  document.getElementById("modalOverlay").classList.remove("show");
+  pickWord();
+  currentRow = 0;
+  currentCol = 0;
+  currentGuess = [];
+  gameOver = false;
+  document.getElementById("hintText").textContent = hint;
+  document.getElementById("message").textContent = "";
+  initBoard();
+  initKeyboard();
+}
+
+// ==================== INPUT ====================
+document.addEventListener("keydown", e => {
+  if (gameOver) return;
+  const k = e.key;
+  if (k === "Backspace") { deleteLetter(); return; }
+  if (k === "Enter")     { submitGuess();  return; }
+  handleKey(k);
+});
+
+function handleKey(key) {
+  if (gameOver) return;
+  if (key === "Backspace") { deleteLetter(); return; }
+  if (key === "Enter")     { submitGuess();  return; }
+  if (/^[ぁ-んー]$/.test(key)) addLetter(key);
+}
+
+function shakeTile(row, col) {
+  const t = board[row][col];
+  t.classList.remove("shake");
+  void t.offsetWidth;
+  t.classList.add("shake");
+  t.addEventListener("animationend", () => t.classList.remove("shake"), {once:true});
+}
+
+function addLetter(ch) {
+  if (currentCol >= wordLen) return;
+  board[currentRow][currentCol].textContent = ch;
+  board[currentRow][currentCol].classList.add("filled");
+  currentGuess.push(ch);
+  currentCol++;
+}
+
+function deleteLetter() {
+  if (currentCol <= 0) return;
+  currentCol--;
+  board[currentRow][currentCol].textContent = "";
+  board[currentRow][currentCol].classList.remove("filled");
+  currentGuess.pop();
+}
+
+function submitGuess() {
+  if (currentCol < wordLen) {
+    showMessage("まだ文字が足りません！");
+    shakeRow(currentRow);
+    return;
+  }
+  const guess = currentGuess.join("");
+  revealRow(currentRow, guess);
+}
+
+function revealRow(row, guess) {
+  const ansArr = answer.split("");
+  const guessArr = guess.split("");
+  const result = Array(wordLen).fill("absent");
+  const remaining = [...ansArr];
+
+  // Correct pass
+  for (let i = 0; i < wordLen; i++) {
+    if (guessArr[i] === ansArr[i]) {
+      result[i] = "correct";
+      remaining[i] = null;
+    }
+  }
+  // Present pass
+  for (let i = 0; i < wordLen; i++) {
+    if (result[i] === "correct") continue;
+    const idx = remaining.indexOf(guessArr[i]);
+    if (idx !== -1) {
+      result[i] = "present";
+      remaining[idx] = null;
+    }
+  }
+
+  // Animate
+  result.forEach((state, i) => {
+    setTimeout(() => {
+      const tile = board[row][i];
+      tile.style.animationDelay = "0ms";
+      tile.classList.add(state);
+
+      // Update key state
+      const ch = guessArr[i];
+      const prev = keyStates[ch];
+      if (!prev || (prev === "absent") || (prev === "present" && state === "correct")) {
+        keyStates[ch] = state;
+      }
+      if (i === wordLen - 1) {
+        updateKeys();
+        checkEndOfTurn(row, guess, result);
+      }
+    }, i * 120);
+  });
+}
+
+function updateKeys() {
+  document.querySelectorAll(".key").forEach(btn => {
+    const k = btn.dataset.key;
+    const s = keyStates[k];
+    btn.classList.remove("correct","present","absent");
+    if (s) btn.classList.add(s);
+  });
+}
+
+function checkEndOfTurn(row, guess, result) {
+  const won = result.every(r => r === "correct");
+  if (won) {
+    gameOver = true;
+    board[row].forEach((tile, i) => {
+      setTimeout(() => tile.classList.add("bounce"), i * 80 + 200);
+    });
+    setTimeout(() => showModal(true), 1000);
+    return;
+  }
+  currentRow++;
+  currentCol = 0;
+  currentGuess = [];
+  if (currentRow >= 6) {
+    gameOver = true;
+    setTimeout(() => showModal(false), 600);
+  }
+}
+
+function shakeRow(row) {
+  board[row].forEach(tile => {
+    tile.classList.remove("shake");
+    void tile.offsetWidth;
+    tile.classList.add("shake");
+    tile.addEventListener("animationend", () => tile.classList.remove("shake"), {once:true});
+  });
+}
+
+function showMessage(msg, duration = 2000) {
+  const el = document.getElementById("message");
+  el.textContent = msg;
+  if (duration > 0) setTimeout(() => { el.textContent = ""; }, duration);
+}
+
+function showModal(won) {
+  const msgs_win = [
+    "見事！奈良の神鹿も喜んでいます 🦌",
+    "素晴らしい！正解です！",
+    "さすが！奈良博士の称号を授けます 🏅",
+    "完璧！春日大社の神様も感心しています ⛩️",
+    "やった！奈良への愛を感じます 🌸",
+  ];
+  const msgs_lose = [
+    "残念…また挑戦してみてください 🙏",
+    "惜しかった！奈良はまだ謎が多い地です",
+  ];
+
+  document.getElementById("modalEmoji").textContent = won ? "🎉" : "😢";
+  document.getElementById("modalTitle").textContent = won ? "正解！" : "残念…";
+  document.getElementById("modalMsg").textContent = won
+    ? msgs_win[Math.floor(Math.random()*msgs_win.length)]
+    : msgs_lose[Math.floor(Math.random()*msgs_lose.length)];
+  document.getElementById("modalAnswer").textContent = answer;
+  document.getElementById("modalDesc").textContent = desc;
+  document.getElementById("modalOverlay").classList.add("show");
+}
+
+// Start
+newGame();
+</script>
+</body>
+</html>
